@@ -69,7 +69,7 @@ with the latest research ideas. We achieve this goal by:
 
 We believe that it is important to provide benchmarks that people can easily
 replicate. As a result, we have provided full experimental results and
-pretrained on models on the following publicly available datasets:
+pretrained our models on the following publicly available datasets:
 
 1. *Small-scale*: English-Vietnamese parallel corpus of TED talks (133K sentence
    pairs) provided by
@@ -988,7 +988,8 @@ decoder = tf.contrib.seq2seq.BeamSearchDecoder(
         initial_state=decoder_initial_state,
         beam_width=beam_width,
         output_layer=projection_layer,
-        length_penalty_weight=0.0)
+        length_penalty_weight=0.0,
+        coverage_penalty_weight=0.0)
 
 # Dynamic decoding
 outputs, _ = tf.contrib.seq2seq.dynamic_decode(decoder, ...)

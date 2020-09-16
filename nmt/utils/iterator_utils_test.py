@@ -29,6 +29,7 @@ from ..utils import iterator_utils
 class IteratorUtilsTest(tf.test.TestCase):
 
   def testGetIterator(self):
+    tf.set_random_seed(1)
     tgt_vocab_table = src_vocab_table = lookup_ops.index_table_from_tensor(
         tf.constant(["a", "b", "c", "eos", "sos"]))
     src_dataset = tf.data.Dataset.from_tensor_slices(
@@ -52,7 +53,8 @@ class IteratorUtilsTest(tf.test.TestCase):
         eos=hparams.eos,
         random_seed=hparams.random_seed,
         num_buckets=hparams.num_buckets,
-        src_max_len=src_max_len)
+        src_max_len=src_max_len,
+        reshuffle_each_iteration=False)
     table_initializer = tf.tables_initializer()
     source = iterator.source
     target_input = iterator.target_input
@@ -72,17 +74,17 @@ class IteratorUtilsTest(tf.test.TestCase):
           sess.run((source, src_seq_len, target_input, target_output,
                     tgt_seq_len)))
       self.assertAllEqual(
-          [[-1, -1, 0], # "f" == unknown, "e" == unknown, a
-           [2, 0, 3]],  # c a eos -- eos is padding
+          [[2, 0, 3],   # c a eos -- eos is padding
+          [-1, -1, 0]], # "f" == unknown, "e" == unknown, a
           source_v)
-      self.assertAllEqual([3, 2], src_len_v)
+      self.assertAllEqual([2, 3], src_len_v)
       self.assertAllEqual(
-          [[4, 2, 2],   # sos c c
-           [4, 1, 2]],  # sos b c
+          [[4, 1, 2],   # sos b c
+           [4, 2, 2]],  # sos c c
           target_input_v)
       self.assertAllEqual(
-          [[2, 2, 3],   # c c eos
-           [1, 2, 3]],  # b c eos
+          [[1, 2, 3],   # b c eos
+           [2, 2, 3]],  # c c eos
           target_output_v)
       self.assertAllEqual([3, 3], tgt_len_v)
 
@@ -105,6 +107,7 @@ class IteratorUtilsTest(tf.test.TestCase):
         sess.run(source)
 
   def testGetIteratorWithShard(self):
+    tf.set_random_seed(1)
     tgt_vocab_table = src_vocab_table = lookup_ops.index_table_from_tensor(
         tf.constant(["a", "b", "c", "eos", "sos"]))
     src_dataset = tf.data.Dataset.from_tensor_slices(
@@ -130,7 +133,8 @@ class IteratorUtilsTest(tf.test.TestCase):
         num_buckets=hparams.num_buckets,
         src_max_len=src_max_len,
         num_shards=2,
-        shard_index=1)
+        shard_index=1,
+        reshuffle_each_iteration=False)
     table_initializer = tf.tables_initializer()
     source = iterator.source
     target_input = iterator.target_input
@@ -150,17 +154,17 @@ class IteratorUtilsTest(tf.test.TestCase):
           sess.run((source, src_seq_len, target_input, target_output,
                     tgt_seq_len)))
       self.assertAllEqual(
-          [[-1, -1, 0], # "f" == unknown, "e" == unknown, a
-           [2, 0, 3]],  # c a eos -- eos is padding
+          [[2, 0, 3],     # c a eos -- eos is padding
+           [-1, -1, 0]],  # "f" == unknown, "e" == unknown, a
           source_v)
-      self.assertAllEqual([3, 2], src_len_v)
+      self.assertAllEqual([2, 3], src_len_v)
       self.assertAllEqual(
-          [[4, 2, 2],   # sos c c
-           [4, 1, 2]],  # sos b c
+          [[4, 1, 2],   # sos b c
+           [4, 2, 2]],  # sos c c
           target_input_v)
       self.assertAllEqual(
-          [[2, 2, 3],   # c c eos
-           [1, 2, 3]],  # b c eos
+          [[1, 2, 3],   # b c eos
+           [2, 2, 3]],  # c c eos
           target_output_v)
       self.assertAllEqual([3, 3], tgt_len_v)
 
@@ -168,6 +172,7 @@ class IteratorUtilsTest(tf.test.TestCase):
         sess.run(source)
 
   def testGetIteratorWithSkipCount(self):
+    tf.set_random_seed(1)
     tgt_vocab_table = src_vocab_table = lookup_ops.index_table_from_tensor(
         tf.constant(["a", "b", "c", "eos", "sos"]))
     src_dataset = tf.data.Dataset.from_tensor_slices(
@@ -193,7 +198,8 @@ class IteratorUtilsTest(tf.test.TestCase):
         random_seed=hparams.random_seed,
         num_buckets=hparams.num_buckets,
         src_max_len=src_max_len,
-        skip_count=skip_count)
+        skip_count=skip_count,
+        reshuffle_each_iteration=False)
     table_initializer = tf.tables_initializer()
     source = iterator.source
     target_input = iterator.target_input
@@ -234,17 +240,17 @@ class IteratorUtilsTest(tf.test.TestCase):
           sess.run((source, src_seq_len, target_input, target_output,
                     tgt_seq_len)))
       self.assertAllEqual(
-          [[2, 0, 3],    # c a eos -- eos is padding
-           [-1, -1, 0]], # "f" == unknown, "e" == unknown, a
+          [[-1, -1, 0],  # "f" == unknown, "e" == unknown, a
+           [2, 0, 3]],   # c a eos -- eos is padding
           source_v)
-      self.assertAllEqual([2, 3], src_len_v)
+      self.assertAllEqual([3, 2], src_len_v)
       self.assertAllEqual(
-          [[4, 1, 2],   # sos b c
-           [4, 2, 2]],  # sos c c
+          [[4, 2, 2],   # sos c c
+           [4, 1, 2]],  # sos b c
           target_input_v)
       self.assertAllEqual(
-          [[1, 2, 3],   # b c eos
-           [2, 2, 3]],  # c c eos
+          [[2, 2, 3],   # c c eos
+           [1, 2, 3]],  # b c eos
           target_output_v)
       self.assertAllEqual([3, 3], tgt_len_v)
 
